@@ -1,0 +1,117 @@
+# CROSS COMPILE A RASPBERRY PI 3 KERNEL 4.14.y WITH MPTCP v0.95:
+sudo su
+# <Enter user password>
+apt update
+apt upgrade
+# INSTALL PREREQUISITES:
+apt install git bc make ncurses-dev gcc gcc-arm-linux-gnueabihf wget unzip
+# DOWNLOAD RASPBERRYPI KERNEL AND MERGE WITH MPTCP:
+git clone git://github.com/raspberrypi/linux.git
+cd linux
+git remote add mptcp https://github.com/multipath-tcp/mptcp.git
+git fetch mptcp
+git checkout -b rpi_mptcp origin/rpi-4.14.y
+# SETTING UP GIT EMAIL (CAN BE A TRASH MAIL OR JUST EXAMPLE@MAIL.COM)
+git config --global user.email "example@mail.com"
+git merge mptcp/mptcp_v0.95
+# -> STRG+X
+# INSTALL TOOLCHAIN:
+git clone https://github.com/raspberrypi/tools ~/tools
+echo PATH=\$PATH:~/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin >> ~/.bashrc
+source ~/.bashrc
+# MAKE CONFIG:
+make mrproper
+make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- bcm2709_defconfig
+make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- nconfig
+# Enable the following modules with <space>:
+# 	[*] Networking support --->
+# 	          Networking options --->
+#                    [*] TCP/IP networking
+#                        [*] IP: advanced router
+#                            [*] IP: policy routing
+#                    ...
+#                    [*] TCP: advanced congestion control  --->
+#                        <*> MPTCP Linked Increase
+#                        <*> MPTCP Opportunistic Linked Increase
+#                        <*> MPTCP WVEGAS CONGESTION CONTROL
+#                        <*> MPTCP BALIA CONGESTION CONTROL
+#                               Default TCP congestion control (Lia)  --->
+#                                   <X> Lia
+#                    ...
+# 	              <*> The IPv6 protocol --->
+# 	              [*] MPTCP protocol
+# 	              [*] MPTCP: advanced path-manager control --->
+#                       <*> MPTCP Full-Mesh Path-Manager 
+#                       <*> MPTCP ndiff-ports 
+#                       <*> MPTCP Binder
+#                       <*> MPTCP Netlink Path-Manager
+#                           Default MPTCP Path-Manager (Full mesh)  --->
+#                               <X> Full mesh      
+# 	              [*] MPTCP: advanced scheduler control --->
+#                       <*> MPTCP BLEST
+#                       <*> MPTCP Round-Robin
+#                       <*> MPTCP Redundant 
+#                           Default MPTCP Scheduler (Default)  ---> 
+#                               <X> Default
+#
+# 3-5x <ESC> + 2x ENTER (<save> and <ok>)
+#
+#
+# CROSS COMPILE:
+# the "-j 4" is the number of tasks/cores you will use:
+make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- -j 4 zImage
+make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- -j 4 modules
+make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- -j 4 dtbs
+# DOWNLOAD LATEST RASPBIAN LITE IMAGE:
+wget https://downloads.raspberrypi.org/raspbian_lite_latest
+unzip raspbian_lite_latest
+mv *.img raspbian.img
+fdisk -l raspbian.img
+# YOU WILL GET SOMETHING LIKE THAT:
+#
+# Disk raspbian.img: 1.7 GiB, 1858076672 bytes, 3629056 sectors
+# Units: sectors of 1 * 512 = 512 bytes
+# Sector size (logical/physical): 512 bytes / 512 bytes
+# I/O size (minimum/optimal): 512 bytes / 512 bytes
+# Disklabel type: dos
+# Disk identifier: 0x37665771
+#
+# Device        Boot Start     End Sectors  Size Id Type
+# raspbian.img1        8192   96663    88472 43,2M  c W95 FAT32 (LBA)
+# raspbian.img2       98304 3637247  3538944  1,7G 83 Linux
+#
+#
+#
+# CALCULATE THE OFFSET OF BOTH PARTITIONS:
+# <PARTITION>:	<UNITS IN BYTES> * <START OF PARTITION> = <OFFSET>
+# PARTITION 1: 	512 		         * 8192 	 	            = 4194304
+# PARTITION 2:	512		           * 98304		            = 50331648
+#
+#
+#
+# THEN MOUNT BOTH PARTITIONS:
+mkdir -p mnt/fat32
+mkdir mnt/ext4
+mount -v -o offset=50331648 -t ext4 raspbian.img mnt/ext4
+# INSTALL MODULES:
+make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_MOD_PATH=mnt/ext4 -j 4 modules_install
+KERNEL=kernel7
+umount mnt/ext4
+mount -v -o offset=4194304 -t vfat raspbian.img mnt/fat32
+cp mnt/fat32/$KERNEL.img mnt/fat32/$KERNEL-backup.img
+cp arch/arm/boot/zImage mnt/fat32/$KERNEL.img
+cp arch/arm/boot/dts/*.dtb mnt/fat32/
+cp arch/arm/boot/dts/overlays/*.dtb* mnt/fat32/overlays/
+cp arch/arm/boot/dts/overlays/README mnt/fat32/overlays/
+echo "kernel=kernel7.img" >> mnt/fat32/config.txt
+umount mnt/fat32
+# DONE
+#
+# OPTIONAL: RENAME raspbian.img IF YOU WANT e.g. "Raspbian_RPi3_4.14.133-v7+_mptcp_0.95.img"
+#
+# COPY raspbian.img TO SDCARD:
+# WITH MACOS:
+sudo diskutil list
+# LOOK FOR YOUR SD-CARD: e.g. /dev/disk5
+diskutil unmountDisk /dev/disk5
+sudo dd if=raspbian.img of=/dev/rdisk5 bs=1m conv=sync
