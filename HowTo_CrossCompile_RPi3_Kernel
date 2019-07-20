@@ -13,6 +13,7 @@ git fetch mptcp
 git checkout -b rpi_mptcp origin/rpi-4.14.y
 # SETTING UP GIT EMAIL (CAN BE A TRASH MAIL OR JUST EXAMPLE@MAIL.COM)
 git config --global user.email "example@mail.com"
+git config merge.renameLimit 999999
 git merge mptcp/mptcp_v0.95
 # -> STRG+X
 # INSTALL TOOLCHAIN:
