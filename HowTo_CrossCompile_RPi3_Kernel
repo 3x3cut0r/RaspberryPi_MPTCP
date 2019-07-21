@@ -6,7 +6,7 @@ apt upgrade
 # INSTALL PREREQUISITES:
 apt install git bc make ncurses-dev gcc gcc-arm-linux-gnueabihf wget unzip
 # DOWNLOAD RASPBERRYPI KERNEL AND MERGE WITH MPTCP:
-git clone git://github.com/raspberrypi/linux.git
+git clone -b rpi-4.14.y git://github.com/raspberrypi/linux.git
 cd linux
 git remote add mptcp https://github.com/multipath-tcp/mptcp.git
 git fetch mptcp
@@ -14,7 +14,7 @@ git checkout -b rpi_mptcp origin/rpi-4.14.y
 # SETTING UP GIT EMAIL (CAN BE A TRASH MAIL OR JUST EXAMPLE@MAIL.COM)
 git config --global user.email "example@mail.com"
 git config merge.renameLimit 999999
-git merge mptcp/mptcp_v0.95
+git merge mptcp/mptcp_v0.94
 # -> STRG+X
 # INSTALL TOOLCHAIN:
 git clone https://github.com/raspberrypi/tools ~/tools
