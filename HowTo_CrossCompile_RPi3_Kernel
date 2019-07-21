@@ -37,7 +37,12 @@ make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- nconfig
 #                        <*> MPTCP WVEGAS CONGESTION CONTROL
 #                        <*> MPTCP BALIA CONGESTION CONTROL
 #                               Default TCP congestion control (Lia)  --->
-#                                   <X> Lia
+#                                   <X> Cubic  
+#                                       Lia  
+#                                       Olia  
+#                                       Wvegas  
+#                                       Belia  
+#                                       Reno  
 #                    ...
 # 	              <*> The IPv6 protocol --->
 # 	              [*] MPTCP protocol
@@ -48,12 +53,16 @@ make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- nconfig
 #                       <*> MPTCP Netlink Path-Manager
 #                           Default MPTCP Path-Manager (Full mesh)  --->
 #                               <X> Full mesh      
+#                                   ndiff-ports  
+#                                   binder
+#                                   Default  
 # 	              [*] MPTCP: advanced scheduler control --->
-#                       <*> MPTCP BLEST
 #                       <*> MPTCP Round-Robin
 #                       <*> MPTCP Redundant 
 #                           Default MPTCP Scheduler (Default)  ---> 
-#                               <X> Default
+#                               <X> Default  
+#                                   Round-Robin  
+#                                   Redundant  
 #
 # 3-5x <ESC> + 2x ENTER (<save> and <ok>)
 #
@@ -108,7 +117,7 @@ echo "kernel=kernel7.img" >> mnt/fat32/config.txt
 umount mnt/fat32
 # DONE
 #
-# OPTIONAL: RENAME raspbian.img IF YOU WANT e.g. "Raspbian_RPi3_4.14.133-v7+_mptcp_0.95.img"
+# OPTIONAL: RENAME raspbian.img IF YOU WANT e.g. "Raspbian_RPi3_4.14.133-v7+_mptcp_0.94.img"
 #
 # COPY raspbian.img TO SDCARD:
 # WITH MACOS:
