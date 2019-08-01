@@ -1,4 +1,4 @@
-# CROSS COMPILE A RASPBERRY PI 3 KERNEL 4.14.y WITH MPTCP v0.95:
+# CROSS COMPILE A RASPBERRY PI 3 KERNEL 4.14.y WITH MPTCP v0.94:
 sudo su
 # <Enter user password>
 apt update
