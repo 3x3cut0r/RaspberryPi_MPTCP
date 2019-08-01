@@ -1,4 +1,4 @@
-# HowTo CrossCompile a RaspberryPi3 4.14.x Kernel with MPTCP 0.95
+# HowTo CrossCompile a RaspberryPi3 4.14.x Kernel with MPTCP 0.94
 Compile your own or download a precomiled one above:
 
 Raspbian_RPi3_4.14.133-v7+_mptcp_0.94.img: http://ul.to/xxxc5dft   
