@@ -1,0 +1,9 @@
+sudo su
+apt-mark hold raspberrypi-kernel
+apt-mark hold raspberrypi-kernel-headers
+apt list --installed | grep kernel
+vi /etc/apt/preferences.d/prevent-kernel-updates
+  Explanation: Prevent Kernel updates
+  Package: raspberrypi-kernel
+  Pin: version 1.20180417-1
+  Pin-Priority: 1001
