@@ -1,0 +1,46 @@
+# WLAN wpa_supplicant configuration
+vi /etc/systemd/system/wpa_supplicant\@.service
+  [Unit]
+  Description=WPA_Supplicant Service %i
+  Wants=network.target
+  Before=network.target
+  BindsTo=sys-subsystem-net-devices-%i.device
+  After=sys-subsystem-net-devices-%i.device
+
+  [Service]
+  Type=oneshot
+  RemainAfterExit=yes
+
+  ExecStart=/sbin/ip l set %i up
+  ExecStart=/sbin/wpa_supplicant -B -i %i -c /etc/wpa_supplicant/wpa_supplicant-%i.conf -Dnl80211,wext
+  #ExecStart=/sbin/dhclient %i
+
+  ExecStop=/sbin/ip l set %i down
+
+  [Install]
+  WantedBy=multi-user.target
+  
+rm /etc/wpa_supplicant/wpa_supplicant.conf
+vi /etc/wpa_supplicant/wpa_supplicant-wlan0.conf
+  ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+  update_config=1
+  country=DE
+  network={
+          ssid="WLAN-12345"
+          psk="*****"
+  }
+  
+vi /etc/wpa_supplicant/wpa_supplicant-wlan1.conf
+  ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+  update_config=1
+  country=DE
+  network={
+          ssid="WLAN-67890"
+          psk="*****"
+  }
+  
+systemctl daemon-reload
+systemctl enable wpa_supplicant.service
+systemctl enable wpa_supplicant@wlan0.service
+systemctl enable wpa_supplicant@wlan1.service
+reboot
