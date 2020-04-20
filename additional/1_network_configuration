@@ -1,0 +1,39 @@
+vi /etc/systemd/network/10-eth0.network
+  [Match]
+  MACAddress=b8:27:eb:xx:xx:xx
+  Virtualization=no
+
+  [Network]
+  DHCP=ipv6
+  IPv6AcceptRA=no
+  LinkLocalAddressing=no
+  Address=10.168.178.244/24
+
+vi /etc/systemd/network/20-wlan0.network
+  [Match]
+  MACAddress=b8:27:eb:xx:xx:xx
+  Virtualization=no
+  Type=wlan
+
+  [Network]
+  DHCP=ipv6
+  IPv6AcceptRA=no
+  LinkLocalAddressing=no
+  Address=192.168.178.245/24
+  Gateway=192.168.178.1
+  DNS=192.168.178.1
+  DNS=8.8.8.8
+  DNS=8.8.4.4
+
+vi /etc/systemd/network/30-wlan1.network
+  [Match]
+  MACAddress=b8:27:eb:xx:xx:xx
+  Virtualization=no
+  Type=wlan
+
+  [Network]
+  DHCP=ipv6
+  IPv6AcceptRA=no
+  LinkLocalAddressing=no
+  Address=192.168.46.245/24
+  Gateway=192.168.46.1
