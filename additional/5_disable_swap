@@ -1,0 +1,11 @@
+#disable swap -> NOT recommended
+sudo su
+swapoff --all
+apt-get remove dphys-swapfile
+
+
+# reduce swap
+vi /etc/sysctl.conf
+  ...
+  # Decrease swap usage
+  vm.swappiness=10
