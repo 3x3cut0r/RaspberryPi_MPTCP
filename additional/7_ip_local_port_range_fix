@@ -1,0 +1,10 @@
+# ip_local_port_range (syslog error fix + increase port range)
+# Error: prefer different parity for start/end values
+vi /etc/sysctl.conf
+  ...
+  # increase ip_local_port_range
+  net.ipv4.ip_local_port_range = 1024 60999
+  # set ip_local_reserved_ports
+  net.ipv4.ip_local_reserved_ports = 1194,1935,3478-3480,3658,4500,5223,8388,9307,9308,10070-10080,11194,18388,22222
+  
+reboot
