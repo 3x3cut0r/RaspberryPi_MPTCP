@@ -1,0 +1,11 @@
+# disable Bluetooth
+systemctl disable bluetooth.service
+vi /etc/modprobe.d/blacklist-bluetooth.conf
+  #bt
+  blacklist btbcm
+  blacklist hci_uart
+  
+# disable audio
+vi /etc/modprobe.d/blacklist-audio.conf
+  #alsa audio
+  blacklist snd_bcm2835
