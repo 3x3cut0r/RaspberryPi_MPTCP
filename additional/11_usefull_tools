@@ -1,0 +1,2 @@
+# Install some usefull tools
+apt install iperf3 iftop nload
