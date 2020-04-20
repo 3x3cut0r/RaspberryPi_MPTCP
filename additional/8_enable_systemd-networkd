@@ -1,0 +1,6 @@
+# prepare systemd-networkd
+apt purge network-manager network-manager-gnome connman dhcpcd dhcpcd5 wicd
+rm /etc/resolv.conf
+ln -s /var/run/systemd/resolve/resolv.conf /etc/resolv.conf
+systemctl enable systemd-networkd
+systemctl start systemd-networkd
