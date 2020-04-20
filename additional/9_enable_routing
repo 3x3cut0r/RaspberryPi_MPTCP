@@ -1,0 +1,7 @@
+# Routing configuration
+vi /etc/sysctl.conf
+  ...
+  # enable routing
+  net.ipv4.ip_forward=1
+  
+reboot
