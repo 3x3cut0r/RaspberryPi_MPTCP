@@ -57,9 +57,8 @@ git config merge.renameLimit 999999
 # ADD MULTIPATH-TCP/MPTCP FROM GITHUB #
 git remote add mptcp https://github.com/multipath-tcp/mptcp.git
 git fetch mptcp
-git checkout -b rpi_mptcp origin/rpi-4.19.y
-#git fetch --depth=1 mptcp $GIT_COMMIT_MPTCP_SHA1
-#git checkout -b rpi_mptcp $GIT_COMMIT_MPTCP_SHA1
+git checkout -b rpi_mptcp $GIT_COMMIT_MPTCP_SHA1
+#git checkout -b rpi_mptcp origin/rpi-4.19.y
 
 # MERGE REPOSITORYS #
 git merge mptcp/$MPTCP_BRANCH --allow-unrelated-histories
@@ -78,7 +77,43 @@ cd $WORKING_DIR/linux
 # MAKE #
 make mrproper
 make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- $KERNEL_CONFIG
-make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- nconfig
+#make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- nconfig
+cp .config .config.old
+sed -i 's/CONFIG_IPV6=m/CONFIG_IPV6=y/g' .config
+INSLINE=$(grep -rnw '.config' -e 'CONFIG_TCP_CONG_BBR=m' | cut -d: -f 1)
+sed "$(expr $INSLINE + 1)iCONFIG_TCP_CONG_LIA=y" .config
+sed "$(expr $INSLINE + 2)iCONFIG_TCP_CONG_OLIA=y" .config
+sed "$(expr $INSLINE + 3)iCONFIG_TCP_CONG_WVEGAS=y" .config
+sed "$(expr $INSLINE + 4)iCONFIG_TCP_CONG_BALIA=y" .config
+sed "$(expr $INSLINE + 5)iCONFIG_TCP_CONG_MCTCPDESYNC=y" .config
+INSLINE=$(grep -rnw '.config' -e 'CONFIG_DEFAULT_CUBIC=y' | cut -d: -f 1)
+sed "$(expr $INSLINE + 1)i# CONFIG_DEFAULT_LIA is not set" .config
+sed "$(expr $INSLINE + 2)i# CONFIG_DEFAULT_OLIA is not set" .config
+sed "$(expr $INSLINE + 3)i# CONFIG_DEFAULT_WVEGAS is not set" .config
+sed "$(expr $INSLINE + 4)i# CONFIG_DEFAULT_BALIA is not set" .config
+sed "$(expr $INSLINE + 5)i# CONFIG_DEFAULT_MCTCPDESYNC is not set" .config
+INSLINE=$(grep -rnw '.config' -e '# CONFIG_IPV6_SEG6_HMAC is not set' | cut -d: -f 1)
+sed "$(expr $INSLINE + 1)iCONFIG_MPTCP=y" .config
+sed "$(expr $INSLINE + 2)iCONFIG_MPTCP_PM_ADVANCED=y" .config
+sed "$(expr $INSLINE + 3)iCONFIG_MPTCP_FULLMESH=y" .config
+sed "$(expr $INSLINE + 4)iCONFIG_MPTCP_NDIFFPORTS=y" .config
+sed "$(expr $INSLINE + 5)iCONFIG_MPTCP_BINDER=y" .config
+sed "$(expr $INSLINE + 6)iCONFIG_MPTCP_NETLINK=y" .config
+sed "$(expr $INSLINE + 7)iCONFIG_DEFAULT_FULLMESH=y" .config
+sed "$(expr $INSLINE + 8)i# CONFIG_DEFAULT_NDIFFPORTS is not set" .config
+sed "$(expr $INSLINE + 9)i# CONFIG_DEFAULT_BINDER is not set" .config
+sed "$(expr $INSLINE + 10)i# CONFIG_DEFAULT_NETLINK is not set" .config
+sed "$(expr $INSLINE + 11)i# CONFIG_DEFAULT_DUMMY is not set" .config
+sed "$(expr $INSLINE + 12)iCONFIG_DEFAULT_MPTCP_PM="fullmesh"" .config
+sed "$(expr $INSLINE + 13)iCONFIG_MPTCP_SCHED_ADVANCED=y" .config
+sed "$(expr $INSLINE + 14)iCONFIG_MPTCP_BLEST=y" .config
+sed "$(expr $INSLINE + 15)iCONFIG_MPTCP_ROUNDROBIN=y" .config
+sed "$(expr $INSLINE + 16)iCONFIG_MPTCP_REDUNDANT=y" .config
+sed "$(expr $INSLINE + 17)iCONFIG_DEFAULT_SCHEDULER=y" .config
+sed "$(expr $INSLINE + 18)i# CONFIG_DEFAULT_ROUNDROBIN is not set" .config
+sed "$(expr $INSLINE + 19)i# CONFIG_DEFAULT_REDUNDANT is not set" .config
+sed "$(expr $INSLINE + 20)iCONFIG_DEFAULT_MPTCP_SCHED="default"" .config
+
 # COMPILE #
 make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- -j $CPU_CORES_FOR_COMPILING zImage
 make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- -j $CPU_CORES_FOR_COMPILING modules
@@ -91,14 +126,18 @@ mv *.img raspbian.img
 fdisk -l raspbian.img
 mkdir -p mnt/fat32
 mkdir mnt/ext4
-read -p 'Start of Partition1 * 512 = ' PART1
-read -p 'Start of Partition2 * 512 = ' PART2
+START_PART_1=$(fdisk -l raspbian.img | grep raspbian.img1 | awk '{gsub(/[ ]+/," ")}1' | cut -d ' ' -f 2)
+START_PART_2=$(fdisk -l raspbian.img | grep raspbian.img2 | awk '{gsub(/[ ]+/," ")}1' | cut -d ' ' -f 2)
+UNITS=$(fdisk -l raspbian.img | grep Units | cut -d = -f 2 | cut -d ' ' -f 2 | cut -d ' ' -f 1)
+OFFSET_PART_1=$(expr $START_PART_1 \* $UNITS)
+OFFSET_PART_2=$(expr $START_PART_2 \* $UNITS)
 
 # MOUNT IMAGE #
-mount -v -o offset=$PART2 -t ext4 raspbian.img mnt/ext4
-make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_MOD_PATH=mnt/ext4 -j $CPU_CORES_FOR_COMPILING modules_install
+sudo mount -v -o offset=$OFFSET_PART_2 -t ext4 raspbian.img mnt/ext4
+sudo make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_MOD_PATH=mnt/ext4 -j $CPU_CORES_FOR_COMPILING modules_install | tee output.txt
+VERSION=$(tail -n 1 output.txt  | awk '{gsub(/[ ]+/," ")}1' | cut -d ' ' -f 3)
 umount mnt/ext4
-mount -v -o offset=$PART1 -t vfat raspbian.img mnt/fat32
+mount -v -o offset=$OFFSET_PART_1 -t vfat raspbian.img mnt/fat32
 cp mnt/fat32/$KERNEL.img mnt/fat32/$KERNEL-backup.img
 cp arch/arm/boot/zImage mnt/fat32/$KERNEL.img
 cp arch/arm/boot/dts/*.dtb mnt/fat32/
@@ -107,12 +146,12 @@ cp arch/arm/boot/dts/overlays/README mnt/fat32/overlays/
 echo "kernel=$KERNEL.img" >> mnt/fat32/config.txt
 # UNMOUNT IMAGE #
 umount mnt/fat32
-mv raspbian.img $WORKING_DIR/Raspbian_RPi4.img
+mv raspbian.img "$WORKING_DIR"/Raspbian_RPi4_"$VERSION"_"$MPTCP_BRANCH".img
 
 ### CLEANING UP AGAIN ###
 cd $WORKING_DIR
 rm -rf $WORKING_DIR/linux
-#rm -rf $WORKING_DIR/tools
+rm -rf $WORKING_DIR/tools
 rm -rf .gitconfig
 
 # DONE #
