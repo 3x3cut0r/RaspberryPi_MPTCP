@@ -32,8 +32,8 @@ CPU_CORES_FOR_COMPILING=4 # number of cpu cores to use for compiling
 cd $WORKING_DIR
 
 # CLEANING UP #
-rm -rf $WORKING_DIR/linux
-rm -rf .gitconfig
+sudo rm -rf $WORKING_DIR/linux
+sudo rm -rf .gitconfig
 
 # UPDATE ENVIRONMENT #
 sudo apt update
@@ -150,8 +150,8 @@ mv raspbian.img "$WORKING_DIR"/Raspbian_RPi4_"$VERSION"_"$MPTCP_BRANCH".img
 
 ### CLEANING UP AGAIN ###
 cd $WORKING_DIR
-rm -rf $WORKING_DIR/linux
-rm -rf $WORKING_DIR/tools
-rm -rf .gitconfig
+sudo rm -rf $WORKING_DIR/linux
+sudo rm -rf $WORKING_DIR/tools
+sudo rm -rf .gitconfig
 
 # DONE #
