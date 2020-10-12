@@ -1,6 +1,34 @@
 #!/bin/bash
+#
 # !!! HIGHLY EXPERIMENTAL !!!
 # !!! USE AT YOUR OWN RISK !!!
+#
+# Author: Julian Reith
+# E-Mail: julianreith@gmx.de
+# Version: 1.0
+#
+# Description:
+# This script build a RaspiOS.img for a Raspberry Pi
+# with a cross-compiled Multipath-TCP enabled Kernel
+#
+# Usage:
+# 1. change your GIT_USERNAME and GIT_EMAIL
+# 2. change GIT_COMMIT_SHA if you want or leave it for Kernel 4.19.127.
+# (you need to find the highest matching kernel sublevel commit from:
+#  - https://github.com/raspberrypi/linux
+#  and
+#  - https://github.com/multipath-tcp/mptcp
+#  e.g.: https://github.com/raspberrypi/linux/commit/106fa147d3daa58d2c1ae5f41a29d07036fe7d0a)
+# 3. change RPI_BRANCH to the kernel version which multipatch-tcp is using
+# 4. change MPTCP_BRANCH to the highest branch on https://github.com/raspberrypi/linux
+# 5. change KERNEL to the RaspberryPi-Kernel you want to use this image for
+# 6. change KERNEL_CONFIG to the RaspberryPi-CONFIG you want to use this image for
+# 7. change RASPIOS_URL to the RaspberryPi-IMAGE you want to use
+# 8. change CPU_CORES_FOR_COMPILING to the amount of cores of your cpu
+# 9. make this script executable (chmod 755 autobuild_rp4_image_with_mptcp_kernel.bash)
+# 10. execute this script and enter sudo credentials after you have been ask
+# 11. wait
+# 12. DONE
 
 ### ------------------------------------------------------------------------ ###
 ### GITHUB SECTION ###
@@ -139,29 +167,29 @@ OFFSET_PART_1=$(expr "$START_PART_1" '*' "$UNITS")
 OFFSET_PART_2=$(expr "$START_PART_2" '*' "$UNITS")
 
 # MOUNT IMAGE #
-mount -v -o offset=$OFFSET_PART_2 -t ext4 $WORKING_DIR/linux/raspios.img $WORKING_DIR/linux/mnt/ext4
-make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_MOD_PATH=$WORKING_DIR/linux/mnt/ext4 -j $CPU_CORES_FOR_COMPILING modules_install | tee /tmp/INSTALL_MOD_OUTPUT.txt
-VERSION=$(sudo tail -n 1 /tmp/INSTALL_MOD_OUTPUT.txt  | awk '{gsub(/[ ]+/," ")}1' | cut -d ' ' -f 3)
-umount $WORKING_DIR/linux/mnt/ext4
-mount -v -o offset=$OFFSET_PART_1 -t vfat $WORKING_DIR/linux/raspios.img $WORKING_DIR/linux/mnt/fat32
-cp $WORKING_DIR/linux/mnt/fat32/$KERNEL.img $WORKING_DIR/linux/mnt/fat32/$KERNEL-backup.img
-cp $WORKING_DIR/linux/arch/arm/boot/zImage $WORKING_DIR/linux/mnt/fat32/$KERNEL.img
-cp $WORKING_DIR/linux/arch/arm/boot/dts/*.dtb $WORKING_DIR/linux/mnt/fat32/
-cp $WORKING_DIR/linux/arch/arm/boot/dts/overlays/*.dtb* $WORKING_DIR/linux/mnt/fat32/overlays/
-cp $WORKING_DIR/linux/arch/arm/boot/dts/overlays/README $WORKING_DIR/linux/mnt/fat32/overlays/
-echo "kernel=$KERNEL.img" | tee -a $WORKING_DIR/linux/mnt/fat32/config.txt
+sudo mount -v -o offset=$OFFSET_PART_2 -t ext4 $WORKING_DIR/linux/raspios.img $WORKING_DIR/linux/mnt/ext4
+sudo make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_MOD_PATH=$WORKING_DIR/linux/mnt/ext4 -j $CPU_CORES_FOR_COMPILING modules_install | sudo tee /tmp/INSTALL_MOD_OUTPUT.txt
+VERSION=$(tail -n 1 /tmp/INSTALL_MOD_OUTPUT.txt  | awk '{gsub(/[ ]+/," ")}1' | cut -d ' ' -f 3)
+sudo umount $WORKING_DIR/linux/mnt/ext4
+sudo mount -v -o offset=$OFFSET_PART_1 -t vfat $WORKING_DIR/linux/raspios.img $WORKING_DIR/linux/mnt/fat32
+sudo cp $WORKING_DIR/linux/mnt/fat32/$KERNEL.img $WORKING_DIR/linux/mnt/fat32/$KERNEL-backup.img
+sudo cp $WORKING_DIR/linux/arch/arm/boot/zImage $WORKING_DIR/linux/mnt/fat32/$KERNEL.img
+sudo cp $WORKING_DIR/linux/arch/arm/boot/dts/*.dtb $WORKING_DIR/linux/mnt/fat32/
+sudo cp $WORKING_DIR/linux/arch/arm/boot/dts/overlays/*.dtb* $WORKING_DIR/linux/mnt/fat32/overlays/
+sudo cp $WORKING_DIR/linux/arch/arm/boot/dts/overlays/README $WORKING_DIR/linux/mnt/fat32/overlays/
+sudo echo "kernel=$KERNEL.img" | sudo tee -a $WORKING_DIR/linux/mnt/fat32/config.txt
 
 # UNMOUNT IMAGE #
-umount $WORKING_DIR/linux/mnt/fat32
-mv $WORKING_DIR/linux/raspios.img "$WORKING_DIR"/RaspiOS_RPi4_"$VERSION"_"$MPTCP_BRANCH".img
+sudo umount $WORKING_DIR/linux/mnt/fat32
+sudo mv $WORKING_DIR/linux/raspios.img "$WORKING_DIR"/RaspiOS_RPi4_"$VERSION"_"$MPTCP_BRANCH".img
 
 ### CLEANING UP AGAIN ###
 cd $WORKING_DIR
 sudo chown -R $(whoami):$(whoami) $WORKING_DIR/RaspiOS*
 sudo chmod 755 $WORKING_DIR/RaspiOS*
 ls -la RaspiOS*
-rm -rf $WORKING_DIR/linux
-rm -rf $WORKING_DIR/tools
-rm -rf /tmp/INSTALL_MOD_OUTPUT.txt
+sudo rm -rf $WORKING_DIR/linux
+sudo rm -rf $WORKING_DIR/tools
+sudo rm -rf /tmp/INSTALL_MOD_OUTPUT.txt
 
 # DONE #
