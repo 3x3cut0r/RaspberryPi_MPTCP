@@ -5,7 +5,8 @@
 #
 # Author: Julian Reith
 # E-Mail: julianreith@gmx.de
-# Version: 1.0
+# Version: 1.01
+# Date: 2020-10-12
 #
 # Description:
 # This script build a RaspiOS.img for a Raspberry Pi
@@ -62,11 +63,12 @@ CPU_CORES_FOR_COMPILING=4 # number of cpu cores to use for compiling
 
 ### ------------------------------------------------------------------------ ###
 ### START OF SCRIPT ###
-cd $WORKING_DIR
+cd "$WORKING_DIR"
 
 # CLEANING UP #
-sudo rm -rf $WORKING_DIR/linux
-sudo rm -rf .gitconfig
+sudo rm -rf "$WORKING_DIR"/linux
+#sudo rm -rf "$WORKING_DIR"/tools
+sudo rm -rf /tmp/INSTALL_MOD_OUTPUT.txt
 
 # UPDATE ENVIRONMENT #
 sudo apt update
@@ -76,12 +78,12 @@ sudo apt upgrade -y
 sudo apt install -y git bc make ncurses-dev gcc gcc-arm-linux-gnueabihf wget unzip bison flex libssl-dev libc6-dev libncurses5-dev
 
 # CLONE RASPBERRYPI/LINUX FROM GITHUB #
-git clone --branch $RPI_BRANCH git://github.com/raspberrypi/linux.git
-cd $WORKING_DIR/linux
+git clone --branch "$RPI_BRANCH" git://github.com/raspberrypi/linux.git
+cd "$WORKING_DIR"/linux
 
 # SETTING UP GIT #
-git config --global user.name $GIT_USERNAME
-git config --global user.email $GIT_EMAIL
+git config --global user.name "$GIT_USERNAME"
+git config --global user.email "$GIT_EMAIL"
 git config merge.renameLimit 999999
 
 # CHECKOUT REPOSITORY #
@@ -90,26 +92,26 @@ git config merge.renameLimit 999999
 # ADD MULTIPATH-TCP/MPTCP FROM GITHUB #
 git remote add mptcp https://github.com/multipath-tcp/mptcp.git
 git fetch mptcp
-git checkout -b rpi_mptcp $GIT_COMMIT_SHA
+git checkout -b rpi_mptcp "$GIT_COMMIT_SHA"
 #git checkout -b rpi_mptcp origin/rpi-4.19.y
 
 # MERGE REPOSITORYS #
-git merge mptcp/$MPTCP_BRANCH --allow-unrelated-histories
+git merge mptcp/"$MPTCP_BRANCH" --allow-unrelated-histories
 
 # CLONE BUILD TOOLS #
-git clone https://github.com/raspberrypi/tools $WORKING_DIR/tools
+git clone https://github.com/raspberrypi/tools "$WORKING_DIR"/tools
 echo PATH=\$PATH:~/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin >> ~/.bashrc
 source ~/.bashrc
 
 ### COMPILE SECTION ###
 # DOWNLOAD KERNEL_CONFIG
 cd arch/arm/configs/
-wget https://raw.githubusercontent.com/raspberrypi/linux/$RPI_BRANCH/arch/arm/configs/$KERNEL_CONFIG
-cd $WORKING_DIR/linux
+wget https://raw.githubusercontent.com/raspberrypi/linux/"$RPI_BRANCH"/arch/arm/configs/"$KERNEL_CONFIG"
+cd "$WORKING_DIR"/linux
 
 # MAKE #
 make mrproper
-make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- $KERNEL_CONFIG
+make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- "$KERNEL_CONFIG"
 #sudo make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- nconfig
 cp .config .config.old
 sed -i  's/CONFIG_IPV6=m/CONFIG_IPV6=y/g' .config
@@ -148,48 +150,51 @@ sed -i  "$(expr $INSLINE + 19)i# CONFIG_DEFAULT_REDUNDANT is not set" .config
 sed -i  "$(expr $INSLINE + 20)iCONFIG_DEFAULT_MPTCP_SCHED=\"default\"" .config
 
 # COMPILE #
-make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- -j $CPU_CORES_FOR_COMPILING zImage
-make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- -j $CPU_CORES_FOR_COMPILING modules
-make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- -j $CPU_CORES_FOR_COMPILING dtbs
+make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- -j "$CPU_CORES_FOR_COMPILING" zImage
+make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- -j "$CPU_CORES_FOR_COMPILING" modules
+make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- -j "$CPU_CORES_FOR_COMPILING" dtbs
 
 # WGET RASPIAN IMAGE #
-wget $RASPIOS_URL
-sudo chmod 755 $WORKING_DIR/linux/raspios_*
-unzip $WORKING_DIR/linux/raspios_* -d $WORKING_DIR/linux
-mv $WORKING_DIR/linux/*raspios*.img $WORKING_DIR/linux/raspios.img
-fdisk -l $WORKING_DIR/linux/raspios.img
-mkdir -p $WORKING_DIR/linux/mnt/fat32
-mkdir $WORKING_DIR/linux/mnt/ext4
-START_PART_1=$(fdisk -l $WORKING_DIR/linux/raspios.img | grep raspios.img1 | awk '{gsub(/[ ]+/," ")}1' | cut -d ' ' -f 2 | cut -d ' ' -f 1)
-START_PART_2=$(fdisk -l $WORKING_DIR/linux/raspios.img | grep raspios.img2 | awk '{gsub(/[ ]+/," ")}1' | cut -d ' ' -f 2 | cut -d ' ' -f 1)
-UNITS=$(fdisk -l $WORKING_DIR/linux/raspios.img | grep 'Units\|Einheiten' | cut -d = -f 2 | cut -d ' ' -f 2 | cut -d ' ' -f 1)
+wget "$RASPIOS_URL"
+sudo chmod 755 "$WORKING_DIR"/linux/raspios_*
+unzip "$WORKING_DIR"/linux/raspios_* -d "$WORKING_DIR"/linux
+mv "$WORKING_DIR"/linux/*raspios*.img "$WORKING_DIR"/linux/raspios.img
+fdisk -l "$WORKING_DIR"/linux/raspios.img
+mkdir -p "$WORKING_DIR"/linux/mnt/fat32
+mkdir "$WORKING_DIR"/linux/mnt/ext4
+START_PART_1=$(fdisk -l "$WORKING_DIR"/linux/raspios.img | grep raspios.img1 | awk '{gsub(/[ ]+/," ")}1' | cut -d ' ' -f 2 | cut -d ' ' -f 1)
+START_PART_2=$(fdisk -l "$WORKING_DIR"/linux/raspios.img | grep raspios.img2 | awk '{gsub(/[ ]+/," ")}1' | cut -d ' ' -f 2 | cut -d ' ' -f 1)
+UNITS=$(fdisk -l "$WORKING_DIR"/linux/raspios.img | grep 'Units\|Einheiten' | cut -d = -f 2 | cut -d ' ' -f 2 | cut -d ' ' -f 1)
 OFFSET_PART_1=$(expr "$START_PART_1" '*' "$UNITS")
 OFFSET_PART_2=$(expr "$START_PART_2" '*' "$UNITS")
 
 # MOUNT IMAGE #
-sudo mount -v -o offset=$OFFSET_PART_2 -t ext4 $WORKING_DIR/linux/raspios.img $WORKING_DIR/linux/mnt/ext4
-sudo make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_MOD_PATH=$WORKING_DIR/linux/mnt/ext4 -j $CPU_CORES_FOR_COMPILING modules_install | sudo tee /tmp/INSTALL_MOD_OUTPUT.txt
-VERSION=$(tail -n 1 /tmp/INSTALL_MOD_OUTPUT.txt  | awk '{gsub(/[ ]+/," ")}1' | cut -d ' ' -f 3)
-sudo umount $WORKING_DIR/linux/mnt/ext4
-sudo mount -v -o offset=$OFFSET_PART_1 -t vfat $WORKING_DIR/linux/raspios.img $WORKING_DIR/linux/mnt/fat32
-sudo cp $WORKING_DIR/linux/mnt/fat32/$KERNEL.img $WORKING_DIR/linux/mnt/fat32/$KERNEL-backup.img
-sudo cp $WORKING_DIR/linux/arch/arm/boot/zImage $WORKING_DIR/linux/mnt/fat32/$KERNEL.img
-sudo cp $WORKING_DIR/linux/arch/arm/boot/dts/*.dtb $WORKING_DIR/linux/mnt/fat32/
-sudo cp $WORKING_DIR/linux/arch/arm/boot/dts/overlays/*.dtb* $WORKING_DIR/linux/mnt/fat32/overlays/
-sudo cp $WORKING_DIR/linux/arch/arm/boot/dts/overlays/README $WORKING_DIR/linux/mnt/fat32/overlays/
-sudo echo "kernel=$KERNEL.img" | sudo tee -a $WORKING_DIR/linux/mnt/fat32/config.txt
+USER=$(whoami)
+USER_ID=$(id -u $USER)
+GROUP_ID=$(id -g $USER)
+sudo mount -v -o offset="$OFFSET_PART_2" -t ext4 "$WORKING_DIR"/linux/raspios.img "$WORKING_DIR"/linux/mnt/ext4
+sudo make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_MOD_PATH="$WORKING_DIR"/linux/mnt/ext4 -j "$CPU_CORES_FOR_COMPILING" modules_install | sudo tee /tmp/INSTALL_MOD_OUTPUT.txt
+VERSION=$(sudo tail -n 1 /tmp/INSTALL_MOD_OUTPUT.txt  | awk '{gsub(/[ ]+/," ")}1' | cut -d ' ' -f 3)
+sudo umount "$WORKING_DIR"/linux/mnt/ext4
+sudo mount -v -o offset="$OFFSET_PART_1",gid="$USER",uid="$USER" -t vfat "$WORKING_DIR"/linux/raspios.img "$WORKING_DIR"/linux/mnt/fat32
+sudo cp "$WORKING_DIR"/linux/mnt/fat32/$KERNEL.img "$WORKING_DIR"/linux/mnt/fat32/$KERNEL-backup.img
+sudo cp "$WORKING_DIR"/linux/arch/arm/boot/zImage "$WORKING_DIR"/linux/mnt/fat32/$KERNEL.img
+sudo cp "$WORKING_DIR"/linux/arch/arm/boot/dts/*.dtb "$WORKING_DIR"/linux/mnt/fat32/
+sudo cp "$WORKING_DIR"/linux/arch/arm/boot/dts/overlays/*.dtb* "$WORKING_DIR"/linux/mnt/fat32/overlays/
+sudo cp "$WORKING_DIR"/linux/arch/arm/boot/dts/overlays/README "$WORKING_DIR"/linux/mnt/fat32/overlays/
+sudo echo "kernel=$KERNEL.img" | sudo tee -a "$WORKING_DIR"/linux/mnt/fat32/config.txt
 
 # UNMOUNT IMAGE #
-sudo umount $WORKING_DIR/linux/mnt/fat32
-sudo mv $WORKING_DIR/linux/raspios.img "$WORKING_DIR"/RaspiOS_RPi4_"$VERSION"_"$MPTCP_BRANCH".img
+sudo umount "$WORKING_DIR"/linux/mnt/fat32
+sudo mv "$WORKING_DIR"/linux/raspios.img "$WORKING_DIR"/RaspiOS_RPi4_"$VERSION"_"$MPTCP_BRANCH".img
 
 ### CLEANING UP AGAIN ###
-cd $WORKING_DIR
-sudo chown -R $(whoami):$(whoami) $WORKING_DIR/RaspiOS*
-sudo chmod 755 $WORKING_DIR/RaspiOS*
+cd "$WORKING_DIR"
+sudo chown -R $(whoami):$(whoami) "$WORKING_DIR"/RaspiOS*
+sudo chmod 755 "$WORKING_DIR"/RaspiOS*
 ls -la RaspiOS*
-sudo rm -rf $WORKING_DIR/linux
-sudo rm -rf $WORKING_DIR/tools
+sudo rm -rf "$WORKING_DIR"/linux
+sudo rm -rf "$WORKING_DIR"/tools
 sudo rm -rf /tmp/INSTALL_MOD_OUTPUT.txt
 
 # DONE #
