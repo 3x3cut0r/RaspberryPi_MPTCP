@@ -162,7 +162,6 @@ sudo chmod 755 $WORKING_DIR/RaspiOS*
 ls -la RaspiOS*
 rm -rf $WORKING_DIR/linux
 rm -rf $WORKING_DIR/tools
-rm -rf $WORKING_DIR/.gitconfig
 rm -rf /tmp/INSTALL_MOD_OUTPUT.txt
 
 # DONE #
