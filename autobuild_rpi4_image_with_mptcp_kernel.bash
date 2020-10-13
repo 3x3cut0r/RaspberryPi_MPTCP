@@ -5,7 +5,7 @@
 #
 # Author: Julian Reith
 # E-Mail: julianreith@gmx.de
-# Version: 1.02
+# Version: 1.03
 # Date: 2020-10-13
 #
 # Description:
@@ -22,14 +22,13 @@
 #  e.g.: https://github.com/raspberrypi/linux/commit/106fa147d3daa58d2c1ae5f41a29d07036fe7d0a)
 # 3. change RPI_BRANCH to the kernel version which multipatch-tcp is using
 # 4. change MPTCP_BRANCH to the highest branch on https://github.com/raspberrypi/linux
-# 5. change KERNEL to the RaspberryPi-Kernel you want to use this image for
-# 6. change KERNEL_CONFIG to the RaspberryPi-CONFIG you want to use this image for
-# 7. change RASPIOS_URL to the RaspberryPi-IMAGE you want to use
-# 8. change CPU_CORES_FOR_COMPILING to the amount of cores of your cpu
-# 9. make this script executable (chmod 755 autobuild_rp4_image_with_mptcp_kernel.bash)
-# 10. execute this script and enter sudo credentials after you have been ask
-# 11. wait
-# 12. DONE
+# 5. change RASPBERRYPI to the RaspberryPi-Version you want to use this image for
+# 6. change RASPIOS_URL to the RaspberryPi-IMAGE you want to use
+# 7. change CPU_CORES_FOR_COMPILING to the amount of cores of your cpu
+# 8. make this script executable (chmod 755 autobuild_rp4_image_with_mptcp_kernel.bash)
+# 9. execute this script and enter sudo credentials after you have been ask
+# 10. wait
+# 11. DONE
 
 ### ------------------------------------------------------------------------ ###
 ### GITHUB SECTION ###
@@ -46,8 +45,22 @@ MPTCP_BRANCH="mptcp_v0.95" # the git branch from https://github.com/multipath-tc
 # Raspberry Pi 1, Pi Zero, Pi Zero W    : KERNEL="kernel"    KERNEL_CONFIG="bcmrpi_defconfig"
 # Raspberry Pi 2, Pi 3, Pi 3+           : KERNEL="kernel7"   KERNEL_CONFIG="bcm2709_defconfig"
 # Raspberry Pi 4                        : KERNEL="kernel7l"  KERNEL_CONFIG="bcm2711_defconfig"
-KERNEL="kernel7l"
-KERNEL_CONFIG="bcm2711_defconfig"
+RASPBERRYPI=4
+
+case "$RASPBERRYPI" in
+    0|1|"0"|"1"|"zero"|"Zero"|"zerow"|"ZeroW"|"zero w"|"Zero W")
+        KERNEL="kernel"
+        KERNEL_CONFIG="bcmrpi_defconfig"
+        ;;
+    2|3|"2"|"3"|"3+"|"3a"|"3b"|"3b+")
+        KERNEL="kernel7"
+        KERNEL_CONFIG="bcm2709_defconfig"
+        ;;
+    *)
+        KERNEL="kernel7l"
+        KERNEL_CONFIG="bcm2711_defconfig"
+        ;;
+esac
 
 ### IMAGE SECTION ###
 # Raspberry Pi OS (32-bit) with desktop and recommended software    = "https://downloads.raspberrypi.org/raspios_full_armhf_latest"
@@ -174,7 +187,7 @@ USER_ID=$(id -u $USER)
 GROUP_ID=$(id -g $USER)
 sudo mount -v -o offset="$OFFSET_PART_2" -t ext4 "$WORKING_DIR"/linux/raspios.img "$WORKING_DIR"/linux/mnt/ext4
 sudo make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_MOD_PATH="$WORKING_DIR"/linux/mnt/ext4 -j "$CPU_CORES_FOR_COMPILING" modules_install | sudo tee /tmp/INSTALL_MOD_OUTPUT.txt
-VERSION=$(sudo tail -n 1 /tmp/INSTALL_MOD_OUTPUT.txt  | awk '{gsub(/[ ]+/," ")}1' | cut -d ' ' -f 3)
+KERNEL_VERSION=$(sudo tail -n 1 /tmp/INSTALL_MOD_OUTPUT.txt  | awk '{gsub(/[ ]+/," ")}1' | cut -d ' ' -f 3)
 sudo umount "$WORKING_DIR"/linux/mnt/ext4
 sudo mount -v -o offset="$OFFSET_PART_1",gid="$USER",uid="$USER" -t vfat "$WORKING_DIR"/linux/raspios.img "$WORKING_DIR"/linux/mnt/fat32
 sudo cp "$WORKING_DIR"/linux/mnt/fat32/$KERNEL.img "$WORKING_DIR"/linux/mnt/fat32/$KERNEL-backup.img
@@ -186,7 +199,7 @@ sudo echo "kernel=$KERNEL.img" | sudo tee -a "$WORKING_DIR"/linux/mnt/fat32/conf
 
 # UNMOUNT IMAGE #
 sudo umount "$WORKING_DIR"/linux/mnt/fat32
-sudo mv "$WORKING_DIR"/linux/raspios.img "$WORKING_DIR"/RaspiOS_RPi4_"$VERSION"_"$MPTCP_BRANCH".img
+sudo mv "$WORKING_DIR"/linux/raspios.img "$WORKING_DIR"/RaspiOS_RPi-"$RASPBERRYPI"_"$KERNEL_VERSION"_"$MPTCP_BRANCH".img
 
 ### CLEANING UP AGAIN ###
 cd "$WORKING_DIR"
