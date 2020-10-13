@@ -5,8 +5,8 @@
 #
 # Author: Julian Reith
 # E-Mail: julianreith@gmx.de
-# Version: 1.01
-# Date: 2020-10-12
+# Version: 1.02
+# Date: 2020-10-13
 #
 # Description:
 # This script build a RaspiOS.img for a Raspberry Pi
@@ -190,6 +190,7 @@ sudo mv "$WORKING_DIR"/linux/raspios.img "$WORKING_DIR"/RaspiOS_RPi4_"$VERSION"_
 
 ### CLEANING UP AGAIN ###
 cd "$WORKING_DIR"
+sudo chown -R $(whoami):$(whoami) "$WORKING_DIR"/linux
 sudo chown -R $(whoami):$(whoami) "$WORKING_DIR"/RaspiOS*
 sudo chmod 755 "$WORKING_DIR"/RaspiOS*
 ls -la RaspiOS*
