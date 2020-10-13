@@ -5,7 +5,7 @@
 #
 # Author: Julian Reith
 # E-Mail: julianreith@gmx.de
-# Version: 1.04
+# Version: 1.05
 # Date: 2020-10-13
 #
 # Description:
@@ -79,6 +79,8 @@ CPU_CORES_FOR_COMPILING=4 # number of cpu cores to use for compiling
 cd "$WORKING_DIR"
 
 # CLEANING UP #
+sudo umount "$WORKING_DIR"/linux/mnt/ext4
+sudo umount "$WORKING_DIR"/linux/mnt/fat32
 sudo rm -rf "$WORKING_DIR"/linux
 #sudo rm -rf "$WORKING_DIR"/tools
 sudo rm -rf /tmp/INSTALL_MOD_OUTPUT.txt
@@ -188,6 +190,7 @@ GROUP_ID=$(id -g $USER)
 sudo mount -v -o offset="$OFFSET_PART_2" -t ext4 "$WORKING_DIR"/linux/raspios.img "$WORKING_DIR"/linux/mnt/ext4
 sudo make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_MOD_PATH="$WORKING_DIR"/linux/mnt/ext4 -j "$CPU_CORES_FOR_COMPILING" modules_install | sudo tee /tmp/INSTALL_MOD_OUTPUT.txt
 KERNEL_VERSION=$(sudo tail -n 1 /tmp/INSTALL_MOD_OUTPUT.txt  | awk '{gsub(/[ ]+/," ")}1' | cut -d ' ' -f 3)
+sleep 3
 sudo umount "$WORKING_DIR"/linux/mnt/ext4
 sudo mount -v -o offset="$OFFSET_PART_1" -t vfat "$WORKING_DIR"/linux/raspios.img "$WORKING_DIR"/linux/mnt/fat32
 sudo cp "$WORKING_DIR"/linux/mnt/fat32/"$KERNEL".img "$WORKING_DIR"/linux/mnt/fat32/"$KERNEL"-backup.img
@@ -199,6 +202,7 @@ sudo echo "kernel=$KERNEL.img" | sudo tee -a "$WORKING_DIR"/linux/mnt/fat32/conf
 
 # UNMOUNT IMAGE #
 cd "$WORKING_DIR"
+sleep 3
 sudo umount "$WORKING_DIR"/linux/mnt/fat32
 sudo mv "$WORKING_DIR"/linux/raspios.img "$WORKING_DIR"/RaspiOS_RPi-"$RASPBERRYPI"_"$KERNEL_VERSION"_"$MPTCP_BRANCH".img
 
