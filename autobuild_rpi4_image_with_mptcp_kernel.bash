@@ -5,7 +5,7 @@
 #
 # Author: Julian Reith
 # E-Mail: julianreith@gmx.de
-# Version: 1.03
+# Version: 1.04
 # Date: 2020-10-13
 #
 # Description:
@@ -189,20 +189,20 @@ sudo mount -v -o offset="$OFFSET_PART_2" -t ext4 "$WORKING_DIR"/linux/raspios.im
 sudo make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_MOD_PATH="$WORKING_DIR"/linux/mnt/ext4 -j "$CPU_CORES_FOR_COMPILING" modules_install | sudo tee /tmp/INSTALL_MOD_OUTPUT.txt
 KERNEL_VERSION=$(sudo tail -n 1 /tmp/INSTALL_MOD_OUTPUT.txt  | awk '{gsub(/[ ]+/," ")}1' | cut -d ' ' -f 3)
 sudo umount "$WORKING_DIR"/linux/mnt/ext4
-sudo mount -v -o offset="$OFFSET_PART_1",gid="$USER",uid="$USER" -t vfat "$WORKING_DIR"/linux/raspios.img "$WORKING_DIR"/linux/mnt/fat32
-sudo cp "$WORKING_DIR"/linux/mnt/fat32/$KERNEL.img "$WORKING_DIR"/linux/mnt/fat32/$KERNEL-backup.img
-sudo cp "$WORKING_DIR"/linux/arch/arm/boot/zImage "$WORKING_DIR"/linux/mnt/fat32/$KERNEL.img
+sudo mount -v -o offset="$OFFSET_PART_1" -t vfat "$WORKING_DIR"/linux/raspios.img "$WORKING_DIR"/linux/mnt/fat32
+sudo cp "$WORKING_DIR"/linux/mnt/fat32/"$KERNEL".img "$WORKING_DIR"/linux/mnt/fat32/"$KERNEL"-backup.img
+sudo cp "$WORKING_DIR"/linux/arch/arm/boot/zImage "$WORKING_DIR"/linux/mnt/fat32/"$KERNEL".img
 sudo cp "$WORKING_DIR"/linux/arch/arm/boot/dts/*.dtb "$WORKING_DIR"/linux/mnt/fat32/
 sudo cp "$WORKING_DIR"/linux/arch/arm/boot/dts/overlays/*.dtb* "$WORKING_DIR"/linux/mnt/fat32/overlays/
 sudo cp "$WORKING_DIR"/linux/arch/arm/boot/dts/overlays/README "$WORKING_DIR"/linux/mnt/fat32/overlays/
 sudo echo "kernel=$KERNEL.img" | sudo tee -a "$WORKING_DIR"/linux/mnt/fat32/config.txt
 
 # UNMOUNT IMAGE #
+cd "$WORKING_DIR"
 sudo umount "$WORKING_DIR"/linux/mnt/fat32
 sudo mv "$WORKING_DIR"/linux/raspios.img "$WORKING_DIR"/RaspiOS_RPi-"$RASPBERRYPI"_"$KERNEL_VERSION"_"$MPTCP_BRANCH".img
 
 ### CLEANING UP AGAIN ###
-cd "$WORKING_DIR"
 sudo chown -R $(whoami):$(whoami) "$WORKING_DIR"/linux
 sudo chown -R $(whoami):$(whoami) "$WORKING_DIR"/RaspiOS*
 sudo chmod 755 "$WORKING_DIR"/RaspiOS*
