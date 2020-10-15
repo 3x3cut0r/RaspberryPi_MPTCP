@@ -5,8 +5,8 @@
 #
 # Author: Julian Reith
 # E-Mail: julianreith@gmx.de
-# Version: 1.05
-# Date: 2020-10-13
+# Version: 1.06
+# Date: 2020-10-15
 #
 # Description:
 # This script build a RaspiOS.img for a Raspberry Pi
@@ -90,10 +90,11 @@ sudo apt update
 sudo apt upgrade -y
 
 # INSTALL PREREQUISITES #
-sudo apt install -y git bc make ncurses-dev gcc gcc-arm-linux-gnueabihf wget unzip bison flex libssl-dev libc6-dev libncurses5-dev
+sudo apt install -y git bc make ncurses-dev gcc gcc-arm-linux-gnueabihf wget unzip bison flex libssl-dev libc6-dev libncurses5-dev crossbuild-essential-armhf crossbuild-essential-arm64
 
 # CLONE RASPBERRYPI/LINUX FROM GITHUB #
-git clone --branch "$RPI_BRANCH" git://github.com/raspberrypi/linux.git
+#git clone --branch "$RPI_BRANCH" git://github.com/raspberrypi/linux.git
+cp -R "$WORKING_DIR"/linux_backup "$WORKING_DIR"/linux
 cd "$WORKING_DIR"/linux
 
 # SETTING UP GIT #
@@ -101,21 +102,38 @@ git config --global user.name "$GIT_USERNAME"
 git config --global user.email "$GIT_EMAIL"
 git config merge.renameLimit 999999
 
-# CHECKOUT REPOSITORY #
-# git checkout $GIT_COMMIT_RPI_SHA1
+# BACKUP OVERLAY DATA #
+mkdir -p "$WORKING_DIR"/arch_backup/arch/arm/boot/dts/overlays
+mkdir -p "$WORKING_DIR"/arch_backup/arch/arm/configs
+cp -R "$WORKING_DIR"/linux/arch/arm/boot/dts/overlays "$WORKING_DIR"/arch_backup/arch/arm/boot/dts/
+cp -R "$WORKING_DIR"/linux/arch/arm/boot/dts/bcm27* "$WORKING_DIR"/arch_backup/arch/arm/boot/dts/
 
 # ADD MULTIPATH-TCP/MPTCP FROM GITHUB #
 git remote add mptcp https://github.com/multipath-tcp/mptcp.git
 git fetch mptcp
-git checkout -b rpi_mptcp "$GIT_COMMIT_SHA"
-#git checkout -b rpi_mptcp origin/rpi-4.19.y
+#git checkout -b rpi_mptcp "$GIT_COMMIT_SHA"
+git checkout -b rpi_mptcp origin/rpi-4.19.y
+
+cp "$WORKING_DIR"/bcmgenet.c "$WORKING_DIR"/linux/drivers/net/ethernet/broadcom/genet/
+cp "$WORKING_DIR"/lan78xx.c "$WORKING_DIR"/linux/drivers/net/usb/
+git add "$WORKING_DIR"/linux/drivers/net/ethernet/broadcom/genet/bcmgenet.c
+git add "$WORKING_DIR"/linux/drivers/net/usb/lan78xx.c
+git commit -m "drivers/net/ethernet/broadcom/genet/bcmgenet.c" -i "$WORKING_DIR"/linux/drivers/net/ethernet/broadcom/genet/bcmgenet.c
+git commit -m "drivers/net/usb/lan78xx.c" -i "$WORKING_DIR"/linux/drivers/net/usb/lan78xx.c
 
 # MERGE REPOSITORYS #
 git merge mptcp/"$MPTCP_BRANCH" --allow-unrelated-histories
 
+# RESTORE OVERLAY DATA #
+cp -R "$WORKING_DIR"/arch_backup/arch/arm/boot/dts/* "$WORKING_DIR"/linux/arch/arm/boot/dts/
+
 # CLONE BUILD TOOLS #
-git clone https://github.com/raspberrypi/tools "$WORKING_DIR"/tools
-echo PATH=\$PATH:~/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin >> ~/.bashrc
+#git clone https://github.com/raspberrypi/tools "$WORKING_DIR"/tools
+cp -R "$WORKING_DIR"/tools_backup "$WORKING_DIR"/tools
+BASHRC_UPDATE=$(cat .bashrc | grep "tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin" | wc -l)
+if [["$BASHRC_UPDATE" -le "0"]; then
+    echo PATH=\$PATH:~/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin >> ~/.bashrc
+fi
 source ~/.bashrc
 
 ### COMPILE SECTION ###
@@ -211,7 +229,7 @@ sudo chown -R $(whoami):$(whoami) "$WORKING_DIR"/linux
 sudo chown -R $(whoami):$(whoami) "$WORKING_DIR"/RaspiOS*
 sudo chmod 755 "$WORKING_DIR"/RaspiOS*
 ls -la RaspiOS*
-sudo rm -rf "$WORKING_DIR"/linux
+#sudo rm -rf "$WORKING_DIR"/linux
 sudo rm -rf "$WORKING_DIR"/tools
 sudo rm -rf /tmp/INSTALL_MOD_OUTPUT.txt
 
