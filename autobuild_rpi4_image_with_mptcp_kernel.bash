@@ -115,7 +115,7 @@ git merge mptcp/"$MPTCP_BRANCH" --allow-unrelated-histories
 git clone https://github.com/raspberrypi/tools "$WORKING_DIR"/tools
 #cp -R "$WORKING_DIR"/tools_backup "$WORKING_DIR"/tools
 BASHRC_UPDATE=$(cat .bashrc | grep "tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin" | wc -l)
-if [["$BASHRC_UPDATE" -le "0"]; then
+if [ "$BASHRC_UPDATE" -le "0" ]; then
     echo PATH=\$PATH:~/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin >> ~/.bashrc
 fi
 source ~/.bashrc
